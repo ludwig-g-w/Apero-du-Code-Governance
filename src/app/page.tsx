@@ -7,6 +7,7 @@ import {
   useActiveAccount,
   useReadContract,
   useSendTransaction,
+  useSendBatchTransaction,
 } from "thirdweb/react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -37,7 +38,7 @@ export default function Home() {
     params: [],
   });
 
-  const { mutate: sendTransaction, error, status } = useSendTransaction();
+  const { mutate: sendTransaction, error, status } = useSendBatchTransaction();
 
   useEffect(() => {
     if (status === "error") {
@@ -51,19 +52,25 @@ export default function Home() {
   const onMint = () => {
     if (!account?.address) return;
 
-    const transaction = prepareContractCall({
+    const mint = prepareContractCall({
       contract: tokenContract,
       method:
         "function mintTo(address _to, uint256 _amount, uint256 _meetingId)",
       params: [account.address, BigInt(1 * 10 ** 18), BigInt(meetingId ?? 0)],
     });
-    sendTransaction(transaction);
+    const delegate = prepareContractCall({
+      contract: tokenContract,
+      method: "function delegate(address delegatee)",
+      params: [account.address],
+    });
+
+    sendTransaction([mint, delegate]);
   };
 
   const canVote = Number(userBalance) >= Number(proposalThreshold);
 
   return (
-    <main className="background-animate flex bg-background min-h-screen flex-col items-center justify-center p-24">
+    <main className="background-animate flex bg-background min-h-screen flex-col items-center justify-center ">
       <div className="flex flex-col items-center justify-center gap-10 w-full h-full">
         <h1 className="text-center bg-black p-2 text-5xl font-extrabold text-white md:text-8xl">
           L`Apéro du Code
@@ -131,9 +138,9 @@ const MintButton = ({ account, meetingId, onMint, status }) => (
   </button>
 );
 
-const BalanceDisplay = ({ balance }) =>
+const BalanceDisplay = ({ balance }: { balance: bigint | undefined }) =>
   balance && (
     <p className="text-2xl text-white font-bold pb-4">
-      You have already {String(balance)} tokens
+      You have already {String(Number(balance) / 10 ** 18)} tokens
     </p>
   );
