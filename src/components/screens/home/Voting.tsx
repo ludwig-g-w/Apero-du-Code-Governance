@@ -1,14 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { tokenContract, voteContract } from "@/lib/thirdwebClient";
+import { toast } from "@/components/ui/use-toast";
+import {
+  proposalCreatedEvent,
+  tokenContract,
+  voteContract,
+} from "@/lib/thirdwebClient";
+import { useEffect, useState } from "react";
 import { prepareContractCall } from "thirdweb";
 import {
   useActiveAccount,
+  useContractEvents,
   useReadContract,
   useSendTransaction,
 } from "thirdweb/react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "@/components/ui/use-toast";
 import { ProposalItem } from "./Proposal";
+import { ToastAction } from "@radix-ui/react-toast";
 
 export default function Voting() {
   const [description, setDescription] = useState("");
@@ -20,14 +26,43 @@ export default function Voting() {
     params: [],
   });
 
+  const { data: event, isSuccess } = useContractEvents({
+    contract: voteContract,
+    events: [proposalCreatedEvent],
+  });
+
+  useEffect(() => {
+    if (isSuccess && event?.[0]) {
+      toast({
+        title: "Proposal created",
+        description:
+          event?.[0].transactionHash.slice(0, 6) +
+          "..." +
+          event?.[0].transactionHash.slice(-4),
+        action: (
+          <ToastAction
+            altText="link to polyscan"
+            onClick={() => {
+              window.open(
+                `https://amoy.polygonscan.com/tx/${event?.[0].transactionHash}`,
+                "_blank"
+              );
+            }}
+          >
+            Check it out!
+          </ToastAction>
+        ),
+      });
+    }
+  }, [isSuccess, event]);
+
   const { data: threshold } = useReadContract({
     contract: voteContract,
     method: "function proposalThreshold() view returns (uint256)",
     params: [],
   });
-  console.log({ threshold });
 
-  const { mutate: sendTransaction, error } = useSendTransaction();
+  const { mutate: sendTransaction, error, isPending } = useSendTransaction();
 
   useEffect(() => {
     if (error) {
@@ -49,29 +84,29 @@ export default function Voting() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full">
+    <div
+      id="voting"
+      className="flex flex-col items-center justify-center w-full h-full"
+    >
       {isLoading ? (
         <p className="text-xl text-center text-secondary">Loading...</p>
       ) : (
         <div className="max-w-[500px] flex flex-col w-full h-full p-6">
-          <h4 className=" bg-black text-4xl font-extrabold text-white">
-            Voting
-          </h4>
-
           {/* Proposal creation */}
           <div className="flex flex-col bg-black justify-center w-full h-full py-4 px-2 gap-2">
             <div className="flex flex-col gap-4">
-              <label className="text-white">Description</label>
+              <label className="text-white">Make proposal</label>
               <textarea
                 placeholder="explain your proposal"
-                className="bg-muted w-full h-24 p-2 rounded-md font-white color-white"
+                className="bg-muted w-full h-24 p-2 rounded-md font-white text-white"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
             <Button
-              variant={"outline"}
-              className="flex bg-secondary items-center justify-center px-6 py-4 border-primary bg-transparent"
+              className="flex bg-primary items-center justify-center px-6 py-4 border-primary "
+              loading={isPending}
+              disabled={isPending}
               onClick={vote}
             >
               <p className="text-white font-bold">Create</p>

@@ -1,4 +1,4 @@
-import { createThirdwebClient } from "thirdweb";
+import { createThirdwebClient, prepareEvent } from "thirdweb";
 export const clientId = process.env.NEXT_PUBLIC_THIRDWEB_CLIENT_ID!;
 export const secretKey = process.env.THIRDWEB_SECRET_KEY!;
 
@@ -31,4 +31,10 @@ export const voteContract = getContract({
   client: thirdwebClient,
   chain: defineChain(80002),
   address: "0x26a5C0f7CB0A7d5B747bC9d84BDcf0cDDf779DaF",
+});
+
+export const proposalCreatedEvent = prepareEvent({
+  contract: voteContract,
+  signature:
+    "event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 startBlock, uint256 endBlock, string description)",
 });

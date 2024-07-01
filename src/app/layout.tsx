@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <ThirdwebProvider>
-      <html lang="en">
+      <html lang="en" className="bg-secondary">
         <body className={inter.className}>{children}</body>
         <Toaster />
       </html>

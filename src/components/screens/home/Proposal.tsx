@@ -1,15 +1,16 @@
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
 import { voteContract } from "@/lib/thirdwebClient";
-import { prepareContractCall } from "thirdweb";
+import { use, useCallback, useEffect } from "react";
+import { prepareContractCall, prepareEvent } from "thirdweb";
 import {
   useActiveAccount,
+  useContractEvents,
   useReadContract,
   useSendTransaction,
 } from "thirdweb/react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "@/components/ui/use-toast";
 
-export function ProposalItem({ proposal, index }) {
+export function ProposalItem({ proposal }) {
   const account = useActiveAccount();
   const { data: hasVoted } = useReadContract({
     contract: voteContract,
@@ -25,7 +26,7 @@ export function ProposalItem({ proposal, index }) {
     params: [proposal.proposalId],
   });
 
-  const { mutate: sendTransaction, error } = useSendTransaction();
+  const { mutate: sendTransaction, error, isPending } = useSendTransaction();
 
   const handleVote = useCallback(
     (support: number) => {
@@ -55,27 +56,32 @@ export function ProposalItem({ proposal, index }) {
   };
 
   return (
-    <div className={`p-4 bg-popover ${hasVoted ? "bg-secondary" : ""}`}>
-      <p className="text-2xl text-white font-bold pb-4">
-        Proposal {prettifyId(proposal.proposalId)}
+    <div className={`p-4 bg-popover`}>
+      <p className="text-xl text-white pb-4">
+        Proposal:{" "}
+        <span className="text-primary font-bold">
+          {prettifyId(proposal.proposalId)}
+        </span>
       </p>
       <p className=" text-white pb-4 color-muted">{proposal.description}</p>
 
-      <div className="flex flex-row gap-4 w-full">
-        {["Abstain", "Approve", "Against"].map((label, i) => (
+      <div className="flex flex-col sm:flex-row gap-4 w-full">
+        {["Against", "Approve", "Abstain"].map((label, i) => (
           <Button
+            disabled={hasVoted}
+            loading={isPending}
             key={i}
             variant={"outline"}
             className={`flex items-center justify-center px-6 py-4 border-${
               i === 0 ? "primary" : i === 1 ? "secondary" : "muted"
             } bg-transparent`}
             onClick={() =>
-              handleVote(label === "Approve" ? 1 : label === "Against" ? 2 : 0)
+              handleVote(label === "Approve" ? 1 : label === "Against" ? 0 : 2)
             }
           >
             <p className="text-white font-bold">
               {label} {Number(votes?.[i]) / 10 ** 18 ?? 0}
-            </p>{" "}
+            </p>
           </Button>
         ))}
       </div>
