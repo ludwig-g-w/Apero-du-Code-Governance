@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { voteContract } from "@/lib/thirdwebClient";
-import { use, useCallback, useEffect } from "react";
-import { prepareContractCall, prepareEvent } from "thirdweb";
+import { useCallback, useEffect } from "react";
+import { prepareContractCall } from "thirdweb";
 import {
   useActiveAccount,
-  useContractEvents,
   useReadContract,
   useSendTransaction,
 } from "thirdweb/react";

@@ -38,3 +38,9 @@ export const proposalCreatedEvent = prepareEvent({
   signature:
     "event ProposalCreated(uint256 proposalId, address proposer, address[] targets, uint256[] values, string[] signatures, bytes[] calldatas, uint256 startBlock, uint256 endBlock, string description)",
 });
+
+export const tokenClaimedEvent = prepareEvent({
+  contract: tokenContract,
+  signature:
+    "event TokensClaimed(address indexed claimer, address indexed receiver, uint256 indexed startTokenId, uint256 quantityClaimed)",
+});
