@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 const particlesContext = createContext<{
   particlesLoaded: boolean;
   setParticlesLoaded: (value: boolean) => void;
-}>({});
+}>({ particlesLoaded: false, setParticlesLoaded: () => {} });
 
 export function useParticles() {
   return useContext(particlesContext);

@@ -6,16 +6,18 @@ import { polygonAmoy } from "thirdweb/chains";
 import Voting from "@/components/screens/home/Voting";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { useParticles } from "@/lib/particlesContext";
 import {
   thirdwebClient,
   tokenClaimedEvent,
   tokenContract,
+  transferEvent,
   voteContract,
   wallets,
 } from "@/lib/thirdwebClient";
 import { ToastAction } from "@radix-ui/react-toast";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import {
   ConnectButton,
   useActiveAccount,
@@ -23,7 +25,6 @@ import {
   useReadContract,
   useSendBatchTransaction,
 } from "thirdweb/react";
-import { useParticles } from "@/lib/particlesContext";
 
 export default function Home() {
   const searchParams = useSearchParams();
@@ -42,14 +43,28 @@ export default function Home() {
     method: "function proposalThreshold() view returns (uint256)",
     params: [],
   });
+  const count = useRef(0);
 
-  const { data: tokenClaimedEventData, isSuccess } = useContractEvents({
+  const { data: claimedEventData } = useContractEvents({
     contract: tokenContract,
     events: [tokenClaimedEvent],
   });
+  const { setParticlesLoaded } = useParticles();
 
   const { mutate: sendTransaction, error, status } = useSendBatchTransaction();
 
+  // show toast if minting is successful
+  useEffect(() => {
+    if (status === "success") {
+      toast({
+        title: "Token minted!",
+        description: "your token is being minted, it will be available soon ",
+      });
+      setParticlesLoaded(true);
+    }
+  }, [toast, status]);
+
+  // error handling
   useEffect(() => {
     if (status === "error") {
       toast({
@@ -58,42 +73,35 @@ export default function Home() {
       });
     }
   }, [error, status, toast]);
-  const { setParticlesLoaded, particlesLoaded } = useParticles();
 
+  // show toast if token has arrived
   useEffect(() => {
-    if (tokenClaimedEventData?.length && isSuccess) {
+    if (claimedEventData?.length) {
+      const event = claimedEventData.find((event) => {
+        return event.args.receiver === account?.address;
+      });
       toast({
-        title: "Token claimed!",
+        title: "Token has arrived!",
         description:
-          tokenClaimedEventData[0].transactionHash.slice(0, 6) +
+          event.transactionHash.slice(0, 6) +
           "..." +
-          tokenClaimedEventData[0].transactionHash.slice(-4),
+          event.transactionHash.slice(-4),
         action: (
           <ToastAction
             altText="link to polyscan"
             onClick={() => {
               window.open(
-                `https://amoy.polygonscan.com/tx/${tokenClaimedEventData[0].transactionHash}`,
+                `https://amoy.polygonscan.com/tx/${claimedEventData[0].transactionHash}`,
                 "_blank"
               );
             }}
           >
-            Check it out!
+            Link!
           </ToastAction>
         ),
       });
-      setParticlesLoaded(true);
     }
-  }, [tokenClaimedEventData, isSuccess, toast, setParticlesLoaded]);
-
-  useEffect(() => {
-    if (status === "error") {
-      toast({
-        title: "An error occurred",
-        description: error.message,
-      });
-    }
-  }, [error, status, toast]);
+  }, [claimedEventData]);
 
   const onMint = () => {
     if (!account?.address) return;

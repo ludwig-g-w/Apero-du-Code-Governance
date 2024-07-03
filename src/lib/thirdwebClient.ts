@@ -44,3 +44,9 @@ export const tokenClaimedEvent = prepareEvent({
   signature:
     "event TokensClaimed(address indexed claimer, address indexed receiver, uint256 indexed startTokenId, uint256 quantityClaimed)",
 });
+
+export const transferEvent = prepareEvent({
+  contract: tokenContract,
+  signature:
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
+});
